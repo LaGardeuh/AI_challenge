@@ -1,0 +1,569 @@
+{
+  "mean_image_auroc": 0.9708,
+  "mean_pixel_auroc": 0.9803,
+  "mean_f1": 0.7263,
+  "categories": {
+    "bottle": {
+      "category": "bottle",
+      "n_train": 209,
+      "n_test": 83,
+      "image_auroc": 0.9997920565606155,
+      "image_f1": 0.9921259842519685,
+      "precision": 0.984375,
+      "recall": 1.0,
+      "pixel_auroc": 0.9955139964303059,
+      "threshold": 0.30688441552482826,
+      "tp": 63,
+      "tn": 228,
+      "fp": 1,
+      "fn": 0,
+      "defect_breakdown": {
+        "broken_large": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "broken_small": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "contamination": {
+          "auroc": 0.9993761696818465,
+          "f1": 0.9767441860465117
+        }
+      },
+      "elapsed_s": 19.5
+    },
+    "cable": {
+      "category": "cable",
+      "n_train": 224,
+      "n_test": 150,
+      "image_auroc": 0.9939870490286772,
+      "image_f1": 0.847926267281106,
+      "precision": 0.736,
+      "recall": 1.0,
+      "pixel_auroc": 0.9832573367433417,
+      "threshold": 0.2304841506709045,
+      "tp": 92,
+      "tn": 249,
+      "fp": 33,
+      "fn": 0,
+      "defect_breakdown": {
+        "bent_wire": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "cable_swap": {
+          "auroc": 0.988179669030733,
+          "f1": 0.5106382978723404
+        },
+        "combined": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "cut_inner_insulation": {
+          "auroc": 0.9997467071935158,
+          "f1": 0.9655172413793104
+        },
+        "cut_outer_insulation": {
+          "auroc": 0.9918439716312056,
+          "f1": 0.6060606060606061
+        },
+        "missing_cable": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "missing_wire": {
+          "auroc": 0.998936170212766,
+          "f1": 0.8695652173913044
+        },
+        "poke_insulation": {
+          "auroc": 0.9684397163120567,
+          "f1": 0.37735849056603776
+        }
+      },
+      "elapsed_s": 34.0
+    },
+    "capsule": {
+      "category": "capsule",
+      "n_train": 219,
+      "n_test": 132,
+      "image_auroc": 0.9062855409811206,
+      "image_f1": 0.6546546546546547,
+      "precision": 0.48660714285714285,
+      "recall": 1.0,
+      "pixel_auroc": 0.9919236521192425,
+      "threshold": 0.14999300810064933,
+      "tp": 109,
+      "tn": 127,
+      "fp": 115,
+      "fn": 0,
+      "defect_breakdown": {
+        "crack": {
+          "auroc": 0.9159180740208408,
+          "f1": 0.2967741935483871
+        },
+        "faulty_imprint": {
+          "auroc": 0.8384673178061607,
+          "f1": 0.27672955974842767
+        },
+        "poke": {
+          "auroc": 0.9136166863439591,
+          "f1": 0.375
+        },
+        "scratch": {
+          "auroc": 0.8765720445562343,
+          "f1": 0.3194444444444444
+        },
+        "squeeze": {
+          "auroc": 0.9962809917355372,
+          "f1": 0.9302325581395349
+        }
+      },
+      "elapsed_s": 31.8
+    },
+    "carpet": {
+      "category": "carpet",
+      "n_train": 280,
+      "n_test": 117,
+      "image_auroc": 0.9967897271268057,
+      "image_f1": 0.81651376146789,
+      "precision": 0.689922480620155,
+      "recall": 1.0,
+      "pixel_auroc": 0.9969521620165234,
+      "threshold": 0.1441726447213729,
+      "tp": 89,
+      "tn": 268,
+      "fp": 40,
+      "fn": 0,
+      "defect_breakdown": {
+        "color": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "cut": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "hole": {
+          "auroc": 0.9998090145148968,
+          "f1": 0.9714285714285714
+        },
+        "metal_contamination": {
+          "auroc": 0.9872039724980901,
+          "f1": 0.45945945945945943
+        },
+        "thread": {
+          "auroc": 0.9965823650034177,
+          "f1": 0.8444444444444443
+        }
+      },
+      "elapsed_s": 38.0
+    },
+    "grid": {
+      "category": "grid",
+      "n_train": 264,
+      "n_test": 78,
+      "image_auroc": 0.8972606955986459,
+      "image_f1": 0.4578313253012048,
+      "precision": 0.296875,
+      "recall": 1.0,
+      "pixel_auroc": 0.94708443731301,
+      "threshold": 0.34513034998422826,
+      "tp": 57,
+      "tn": 150,
+      "fp": 135,
+      "fn": 0,
+      "defect_breakdown": {
+        "bent": {
+          "auroc": 0.8777777777777778,
+          "f1": 0.15483870967741936
+        },
+        "broken": {
+          "auroc": 0.8988304093567252,
+          "f1": 0.17647058823529413
+        },
+        "glue": {
+          "auroc": 0.8516746411483254,
+          "f1": 0.1692307692307692
+        },
+        "metal_contamination": {
+          "auroc": 0.9161084529505583,
+          "f1": 0.14012738853503182
+        },
+        "thread": {
+          "auroc": 0.9435406698564593,
+          "f1": 0.15602836879432627
+        }
+      },
+      "elapsed_s": 23.5
+    },
+    "hazelnut": {
+      "category": "hazelnut",
+      "n_train": 391,
+      "n_test": 110,
+      "image_auroc": 1.0,
+      "image_f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "pixel_auroc": 0.996022595482278,
+      "threshold": 0.35022204304642807,
+      "tp": 70,
+      "tn": 431,
+      "fp": 0,
+      "fn": 0,
+      "defect_breakdown": {
+        "crack": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "cut": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "hole": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "print": {
+          "auroc": 1.0,
+          "f1": 1.0
+        }
+      },
+      "elapsed_s": 52.5
+    },
+    "leather": {
+      "category": "leather",
+      "n_train": 245,
+      "n_test": 124,
+      "image_auroc": 0.999960759692356,
+      "image_f1": 0.9945945945945946,
+      "precision": 0.989247311827957,
+      "recall": 1.0,
+      "pixel_auroc": 0.9973888274501684,
+      "threshold": 0.19527273156431235,
+      "tp": 92,
+      "tn": 276,
+      "fp": 1,
+      "fn": 0,
+      "defect_breakdown": {
+        "color": {
+          "auroc": 0.999809994299829,
+          "f1": 0.9743589743589743
+        },
+        "cut": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "fold": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "glue": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "poke": {
+          "auroc": 1.0,
+          "f1": 1.0
+        }
+      },
+      "elapsed_s": 31.2
+    },
+    "metal_nut": {
+      "category": "metal_nut",
+      "n_train": 220,
+      "n_test": 115,
+      "image_auroc": 0.9951568470630054,
+      "image_f1": 0.7982832618025751,
+      "precision": 0.6642857142857143,
+      "recall": 1.0,
+      "pixel_auroc": 0.9823151258128119,
+      "threshold": 0.23965291889249324,
+      "tp": 93,
+      "tn": 195,
+      "fp": 47,
+      "fn": 0,
+      "defect_breakdown": {
+        "bent": {
+          "auroc": 0.9978512396694215,
+          "f1": 0.8474576271186441
+        },
+        "color": {
+          "auroc": 0.996619083395943,
+          "f1": 0.7213114754098361
+        },
+        "flip": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "scratch": {
+          "auroc": 0.9859863456701401,
+          "f1": 0.4946236559139785
+        }
+      },
+      "elapsed_s": 20.7
+    },
+    "pill": {
+      "category": "pill",
+      "n_train": 267,
+      "n_test": 167,
+      "image_auroc": 0.9536707573887153,
+      "image_f1": 0.597457627118644,
+      "precision": 0.4259818731117825,
+      "recall": 1.0,
+      "pixel_auroc": 0.9627541203553482,
+      "threshold": 0.20454440537069227,
+      "tp": 141,
+      "tn": 103,
+      "fp": 190,
+      "fn": 0,
+      "defect_breakdown": {
+        "color": {
+          "auroc": 0.9362457337883959,
+          "f1": 0.20833333333333334
+        },
+        "combined": {
+          "auroc": 0.9943786388275446,
+          "f1": 0.7083333333333333
+        },
+        "contamination": {
+          "auroc": 0.984397854705022,
+          "f1": 0.4666666666666667
+        },
+        "crack": {
+          "auroc": 0.8834339721711736,
+          "f1": 0.24074074074074076
+        },
+        "faulty_imprint": {
+          "auroc": 0.9892222022633375,
+          "f1": 0.6129032258064516
+        },
+        "pill_type": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "scratch": {
+          "auroc": 0.9466723549488054,
+          "f1": 0.23076923076923078
+        }
+      },
+      "elapsed_s": 32.2
+    },
+    "screw": {
+      "category": "screw",
+      "n_train": 320,
+      "n_test": 160,
+      "image_auroc": 0.8995553900230452,
+      "image_f1": 0.45161290322580644,
+      "precision": 0.2916666666666667,
+      "recall": 1.0,
+      "pixel_auroc": 0.9881902334143888,
+      "threshold": 0.29429558022137936,
+      "tp": 119,
+      "tn": 72,
+      "fp": 289,
+      "fn": 0,
+      "defect_breakdown": {
+        "manipulated_front": {
+          "auroc": 0.8691135734072022,
+          "f1": 0.24742268041237114
+        },
+        "scratch_head": {
+          "auroc": 0.9761080332409973,
+          "f1": 0.5161290322580645
+        },
+        "scratch_neck": {
+          "auroc": 0.9406094182825485,
+          "f1": 0.2293577981651376
+        },
+        "thread_side": {
+          "auroc": 0.779236420570878,
+          "f1": 0.1373134328358209
+        },
+        "thread_top": {
+          "auroc": 0.927134770564856,
+          "f1": 0.19491525423728814
+        }
+      },
+      "elapsed_s": 34.7
+    },
+    "tile": {
+      "category": "tile",
+      "n_train": 230,
+      "n_test": 117,
+      "image_auroc": 0.9850624660510592,
+      "image_f1": 0.6412213740458015,
+      "precision": 0.47191011235955055,
+      "recall": 1.0,
+      "pixel_auroc": 0.9694985772085155,
+      "threshold": 0.14581136793906913,
+      "tp": 84,
+      "tn": 169,
+      "fp": 94,
+      "fn": 0,
+      "defect_breakdown": {
+        "crack": {
+          "auroc": 0.9997763363900694,
+          "f1": 0.9714285714285714
+        },
+        "glue_strip": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "gray_stroke": {
+          "auroc": 0.949619771863118,
+          "f1": 0.25396825396825395
+        },
+        "oil": {
+          "auroc": 0.9995775242923531,
+          "f1": 0.972972972972973
+        },
+        "rough": {
+          "auroc": 0.9708491761723701,
+          "f1": 0.5357142857142857
+        }
+      },
+      "elapsed_s": 27.6
+    },
+    "toothbrush": {
+      "category": "toothbrush",
+      "n_train": 60,
+      "n_test": 42,
+      "image_auroc": 0.9986111111111111,
+      "image_f1": 0.9523809523809523,
+      "precision": 0.9090909090909091,
+      "recall": 1.0,
+      "pixel_auroc": 0.9954170200668746,
+      "threshold": 0.1484367555646655,
+      "tp": 30,
+      "tn": 69,
+      "fp": 3,
+      "fn": 0,
+      "defect_breakdown": {
+        "defective": {
+          "auroc": 0.9986111111111111,
+          "f1": 0.9523809523809523
+        }
+      },
+      "elapsed_s": 8.3
+    },
+    "transistor": {
+      "category": "transistor",
+      "n_train": 213,
+      "n_test": 100,
+      "image_auroc": 0.9491758241758241,
+      "image_f1": 0.25157232704402516,
+      "precision": 0.14388489208633093,
+      "recall": 1.0,
+      "pixel_auroc": 0.92157119372613,
+      "threshold": 0.07441504841468219,
+      "tp": 40,
+      "tn": 35,
+      "fp": 238,
+      "fn": 0,
+      "defect_breakdown": {
+        "bent_lead": {
+          "auroc": 0.9996336996336996,
+          "f1": 0.9523809523809523
+        },
+        "cut_lead": {
+          "auroc": 0.9842490842490842,
+          "f1": 0.6666666666666666
+        },
+        "damaged_case": {
+          "auroc": 0.9619047619047618,
+          "f1": 0.17094017094017094
+        },
+        "misplaced": {
+          "auroc": 0.8509157509157509,
+          "f1": 0.07751937984496124
+        }
+      },
+      "elapsed_s": 30.0
+    },
+    "wood": {
+      "category": "wood",
+      "n_train": 247,
+      "n_test": 79,
+      "image_auroc": 0.9954260651629073,
+      "image_f1": 0.7228915662650602,
+      "precision": 0.5660377358490566,
+      "recall": 1.0,
+      "pixel_auroc": 0.9834247098861169,
+      "threshold": 0.2254281509844855,
+      "tp": 60,
+      "tn": 220,
+      "fp": 46,
+      "fn": 0,
+      "defect_breakdown": {
+        "color": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "combined": {
+          "auroc": 1.0,
+          "f1": 1.0
+        },
+        "hole": {
+          "auroc": 0.9962406015037594,
+          "f1": 0.8
+        },
+        "liquid": {
+          "auroc": 0.9996240601503759,
+          "f1": 0.9523809523809523
+        },
+        "scratch": {
+          "auroc": 0.9889008234872897,
+          "f1": 0.4772727272727273
+        }
+      },
+      "elapsed_s": 33.0
+    },
+    "zipper": {
+      "category": "zipper",
+      "n_train": 240,
+      "n_test": 151,
+      "image_auroc": 0.9907006920415224,
+      "image_f1": 0.7147147147147147,
+      "precision": 0.5560747663551402,
+      "recall": 1.0,
+      "pixel_auroc": 0.9931748787275219,
+      "threshold": 0.08138023233950664,
+      "tp": 119,
+      "tn": 177,
+      "fp": 95,
+      "fn": 0,
+      "defect_breakdown": {
+        "broken_teeth": {
+          "auroc": 0.9881965944272446,
+          "f1": 0.7037037037037037
+        },
+        "combined": {
+          "auroc": 0.9972426470588236,
+          "f1": 0.9411764705882353
+        },
+        "fabric_border": {
+          "auroc": 0.9995674740484429,
+          "f1": 0.9444444444444444
+        },
+        "fabric_interior": {
+          "auroc": 0.9694393382352942,
+          "f1": 0.25196850393700787
+        },
+        "rough": {
+          "auroc": 0.9943771626297578,
+          "f1": 0.9444444444444444
+        },
+        "split_teeth": {
+          "auroc": 0.9959150326797386,
+          "f1": 0.923076923076923
+        },
+        "squeezed_teeth": {
+          "auroc": 0.9892003676470589,
+          "f1": 0.5333333333333333
+        }
+      },
+      "elapsed_s": 25.0
+    }
+  }
+}

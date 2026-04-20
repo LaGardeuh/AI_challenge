@@ -1,8 +1,10 @@
 """
-PatchCore anomaly detection.
+Implémentation de PatchCore pour la détection d'anomalies.
 
-Training  : extract patch features from normal images -> build a coreset memory bank
-Inference : nearest-neighbour distance to the memory bank = anomaly score
+Principe :
+- Entraînement : on extrait les features des images normales et on les stocke dans une memory bank
+- Inférence : on calcule la distance entre les features de l'image test et la memory bank
+  -> plus la distance est grande, plus l'image est anormale
 """
 
 import torch
@@ -11,10 +13,15 @@ import numpy as np
 from torchvision.models import wide_resnet50_2, Wide_ResNet50_2_Weights
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from scipy.ndimage import gaussian_filter
 
 
 class FeatureExtractor(nn.Module):
-    """Extracts intermediate feature maps from WideResNet50 (layer2 + layer3)."""
+    """
+    On utilise un WideResNet50 pré-entraîné sur ImageNet comme extracteur de features.
+    On prend les sorties de layer2 et layer3 pour avoir des features à différentes échelles.
+    Le réseau est gelé, on ne l'entraîne pas.
+    """
 
     def __init__(self):
         super().__init__()
@@ -23,35 +30,34 @@ class FeatureExtractor(nn.Module):
         self.layer1 = backbone.layer1
         self.layer2 = backbone.layer2
         self.layer3 = backbone.layer3
+        # on gèle tous les paramètres, on n'entraîne rien
         for p in self.parameters():
             p.requires_grad = False
 
     def forward(self, x):
         x = self.layer0(x)
         x = self.layer1(x)
-        f2 = self.layer2(x)   # (B, 512, H/8, W/8)
-        f3 = self.layer3(f2)  # (B, 1024, H/16, W/16)
+        f2 = self.layer2(x)  # (B, 512, H/8, W/8)
+        f3 = self.layer3(f2) # (B, 1024, H/16, W/16)
         return f2, f3
 
 
 def upsample_and_concat(f2, f3):
-    """Upsample f3 to match f2 spatial size, then concatenate."""
+    # on redimensionne f3 pour avoir la même taille spatiale que f2, puis on concatène
     f3_up = nn.functional.interpolate(f3, size=f2.shape[-2:], mode="bilinear", align_corners=False)
-    return torch.cat([f2, f3_up], dim=1)  # (B, 1536, H, W)
+    return torch.cat([f2, f3_up], dim=1)  # -> (B, 1536, H, W)
 
 
 def reshape_to_patches(features):
-    """
-    (B, C, H, W) -> (B*H*W, C)
-    Returns patch embeddings and spatial dims.
-    """
+    # transforme (B, C, H, W) en (B*H*W, C) pour avoir un vecteur par patch
     B, C, H, W = features.shape
     patches = features.permute(0, 2, 3, 1).reshape(-1, C)
     return patches, H, W
 
 
 def random_coreset(embeddings: np.ndarray, ratio: float = 0.1) -> np.ndarray:
-    """Random subsampling — fast and nearly as good as greedy coreset."""
+    # sous-échantillonnage aléatoire pour réduire la taille de la memory bank
+    # on garde seulement ratio% des patches pour ne pas saturer la RAM
     n = len(embeddings)
     target = max(1, int(n * ratio))
     if target >= n:
@@ -61,23 +67,23 @@ def random_coreset(embeddings: np.ndarray, ratio: float = 0.1) -> np.ndarray:
 
 
 class PatchCore:
-    def __init__(self, device: str = "cpu", coreset_ratio: float = 0.1, img_size: int = 224):
+    def __init__(self, device: str = "cpu", coreset_ratio: float = 0.1, img_size: int = 224,
+                 knn: int = 3, smooth_sigma: float = 1.0):
         self.device = device
         self.coreset_ratio = coreset_ratio
         self.img_size = img_size
+        self.knn = knn
+        self.smooth_sigma = smooth_sigma
         self.extractor = FeatureExtractor().to(device).eval()
-        self.memory_bank: np.ndarray | None = None
-        self.spatial_size: tuple | None = None  # (H, W) of feature map
-
-    # ------------------------------------------------------------------
-    # Training
-    # ------------------------------------------------------------------
+        self.memory_bank = None
+        self.spatial_size = None
 
     def fit(self, train_dataset, batch_size: int = 8):
+        """Construit la memory bank à partir des images normales d'entraînement."""
         loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
         all_patches = []
 
-        print("  Extracting features from training images...")
+        print("  Extraction des features des images d'entraînement...")
         with torch.no_grad():
             for images, *_ in tqdm(loader, leave=False):
                 images = images.to(self.device)
@@ -88,45 +94,45 @@ class PatchCore:
                 self.spatial_size = (H, W)
 
         all_patches = np.concatenate(all_patches, axis=0)
-        print(f"  Total patches: {len(all_patches):,} -> applying coreset ({self.coreset_ratio:.0%})...")
+        print(f"  Patches extraits: {len(all_patches):,} -> coreset ({self.coreset_ratio:.0%})...")
         self.memory_bank = random_coreset(all_patches, ratio=self.coreset_ratio)
-        print(f"  Memory bank size: {len(self.memory_bank):,} patches")
-
-    # ------------------------------------------------------------------
-    # Inference
-    # ------------------------------------------------------------------
+        print(f"  Taille memory bank: {len(self.memory_bank):,} patches")
 
     def predict(self, test_dataset, batch_size: int = 4):
         """
-        Returns:
-            image_scores : (N,) anomaly score per image
-            anomaly_maps : (N, img_size, img_size) pixel-level score maps
-            labels       : (N,) ground truth labels
-            masks        : (N, img_size, img_size) ground truth masks
+        Calcule le score d'anomalie pour chaque image du dataset.
+        Retourne les scores, les cartes d'anomalie, les labels et les masques GT.
         """
         loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-        image_scores, anomaly_maps, labels, masks = [], [], [], []
+        image_scores = []
+        anomaly_maps = []
+        labels = []
+        masks = []
 
         memory = torch.tensor(self.memory_bank, dtype=torch.float32).to(self.device)
 
         with torch.no_grad():
-            for images, gt_masks, gt_labels, _ in tqdm(loader, desc="  Inference", leave=False):
+            for images, gt_masks, gt_labels, _ in tqdm(loader, desc="  Inférence", leave=False):
                 images = images.to(self.device)
                 f2, f3 = self.extractor(images)
                 feats = upsample_and_concat(f2, f3)
                 B, C, H, W = feats.shape
-
                 patches = feats.permute(0, 2, 3, 1).reshape(B, H * W, C)
 
                 for i in range(B):
-                    p = patches[i]  # (H*W, C)
-                    dists = torch.cdist(p, memory, p=2)        # (H*W, M)
-                    min_dists, _ = dists.min(dim=1)            # (H*W,)
+                    p = patches[i]
+                    # distance entre chaque patch de l'image et les k plus proches voisins dans la memory bank
+                    dists = torch.cdist(p, memory, p=2)
+                    knn_dists = dists.topk(self.knn, largest=False).values
+                    patch_scores = knn_dists.mean(dim=1)
 
-                    score_map = min_dists.reshape(H, W).cpu().numpy()
+                    score_map = patch_scores.reshape(H, W).cpu().numpy()
+                    # lissage gaussien pour éviter les faux positifs sur un seul patch bruité
+                    score_map = gaussian_filter(score_map, sigma=self.smooth_sigma)
                     score_map_full = self._resize_map(score_map)
 
-                    image_scores.append(float(score_map_full.max()))
+                    # on prend le 99e percentile plutôt que le max pour être moins sensible au bruit
+                    image_scores.append(float(np.percentile(score_map_full, 99)))
                     anomaly_maps.append(score_map_full)
 
                 labels.extend(gt_labels.numpy().tolist())
@@ -139,6 +145,40 @@ class PatchCore:
             np.array(labels),
             np.array(masks),
         )
+
+    def score_threshold_from_train(self, train_dataset, percentile: float = 1.0,
+                                   batch_size: int = 4) -> float:
+        """
+        Calibre le seuil uniquement depuis les images train/good (sans regarder les labels de test).
+        On prend un percentile bas pour s'assurer de détecter presque tous les défauts (FN proche de 0).
+        """
+        loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        train_scores = []
+        memory = torch.tensor(self.memory_bank, dtype=torch.float32).to(self.device)
+
+        print("  Calibration du seuil depuis les images normales...")
+        with torch.no_grad():
+            for images, *_ in tqdm(loader, desc="  Scoring train", leave=False):
+                images = images.to(self.device)
+                f2, f3 = self.extractor(images)
+                feats = upsample_and_concat(f2, f3)
+                B, C, H, W = feats.shape
+                patches = feats.permute(0, 2, 3, 1).reshape(B, H * W, C)
+
+                for i in range(B):
+                    p = patches[i]
+                    dists = torch.cdist(p, memory, p=2)
+                    knn_dists = dists.topk(self.knn, largest=False).values
+                    patch_scores = knn_dists.mean(dim=1)
+                    score_map = patch_scores.reshape(H, W).cpu().numpy()
+                    score_map = gaussian_filter(score_map, sigma=self.smooth_sigma)
+                    score_map_full = self._resize_map(score_map)
+                    train_scores.append(float(np.percentile(score_map_full, 99)))
+
+        threshold = float(np.percentile(train_scores, percentile))
+        print(f"  Scores train: [{min(train_scores):.4f}, {max(train_scores):.4f}]")
+        print(f"  Seuil calibré (p{percentile}): {threshold:.4f}")
+        return threshold
 
     def _resize_map(self, score_map: np.ndarray) -> np.ndarray:
         from PIL import Image as PILImage
