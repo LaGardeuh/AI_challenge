@@ -1,12 +1,3 @@
-"""
-Implémentation de PatchCore pour la détection d'anomalies.
-
-Principe :
-- Entraînement : on extrait les features des images normales et on les stocke dans une memory bank
-- Inférence : on calcule la distance entre les features de l'image test et la memory bank
-  -> plus la distance est grande, plus l'image est anormale
-"""
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -17,11 +8,6 @@ from scipy.ndimage import gaussian_filter
 
 
 class FeatureExtractor(nn.Module):
-    """
-    On utilise un WideResNet50 pré-entraîné sur ImageNet comme extracteur de features.
-    On prend les sorties de layer2 et layer3 pour avoir des features à différentes échelles.
-    Le réseau est gelé, on ne l'entraîne pas.
-    """
 
     def __init__(self):
         super().__init__()
@@ -30,34 +16,29 @@ class FeatureExtractor(nn.Module):
         self.layer1 = backbone.layer1
         self.layer2 = backbone.layer2
         self.layer3 = backbone.layer3
-        # on gèle tous les paramètres, on n'entraîne rien
         for p in self.parameters():
             p.requires_grad = False
 
     def forward(self, x):
         x = self.layer0(x)
         x = self.layer1(x)
-        f2 = self.layer2(x)  # (B, 512, H/8, W/8)
-        f3 = self.layer3(f2) # (B, 1024, H/16, W/16)
+        f2 = self.layer2(x)
+        f3 = self.layer3(f2)
         return f2, f3
 
 
 def upsample_and_concat(f2, f3):
-    # on redimensionne f3 pour avoir la même taille spatiale que f2, puis on concatène
     f3_up = nn.functional.interpolate(f3, size=f2.shape[-2:], mode="bilinear", align_corners=False)
-    return torch.cat([f2, f3_up], dim=1)  # -> (B, 1536, H, W)
+    return torch.cat([f2, f3_up], dim=1)
 
 
 def reshape_to_patches(features):
-    # transforme (B, C, H, W) en (B*H*W, C) pour avoir un vecteur par patch
     B, C, H, W = features.shape
     patches = features.permute(0, 2, 3, 1).reshape(-1, C)
     return patches, H, W
 
 
 def random_coreset(embeddings: np.ndarray, ratio: float = 0.1) -> np.ndarray:
-    # sous-échantillonnage aléatoire pour réduire la taille de la memory bank
-    # on garde seulement ratio% des patches pour ne pas saturer la RAM
     n = len(embeddings)
     target = max(1, int(n * ratio))
     if target >= n:
@@ -79,7 +60,6 @@ class PatchCore:
         self.spatial_size = None
 
     def fit(self, train_dataset, batch_size: int = 8):
-        """Construit la memory bank à partir des images normales d'entraînement."""
         loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
         all_patches = []
 
@@ -99,10 +79,6 @@ class PatchCore:
         print(f"  Taille memory bank: {len(self.memory_bank):,} patches")
 
     def predict(self, test_dataset, batch_size: int = 4):
-        """
-        Calcule le score d'anomalie pour chaque image du dataset.
-        Retourne les scores, les cartes d'anomalie, les labels et les masques GT.
-        """
         loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
         image_scores = []
         anomaly_maps = []
@@ -121,17 +97,14 @@ class PatchCore:
 
                 for i in range(B):
                     p = patches[i]
-                    # distance entre chaque patch de l'image et les k plus proches voisins dans la memory bank
                     dists = torch.cdist(p, memory, p=2)
                     knn_dists = dists.topk(self.knn, largest=False).values
                     patch_scores = knn_dists.mean(dim=1)
 
                     score_map = patch_scores.reshape(H, W).cpu().numpy()
-                    # lissage gaussien pour éviter les faux positifs sur un seul patch bruité
                     score_map = gaussian_filter(score_map, sigma=self.smooth_sigma)
                     score_map_full = self._resize_map(score_map)
 
-                    # on prend le 99e percentile plutôt que le max pour être moins sensible au bruit
                     image_scores.append(float(np.percentile(score_map_full, 99)))
                     anomaly_maps.append(score_map_full)
 
@@ -148,10 +121,6 @@ class PatchCore:
 
     def score_threshold_from_train(self, train_dataset, percentile: float = 1.0,
                                    batch_size: int = 4) -> float:
-        """
-        Calibre le seuil uniquement depuis les images train/good (sans regarder les labels de test).
-        On prend un percentile bas pour s'assurer de détecter presque tous les défauts (FN proche de 0).
-        """
         loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
         train_scores = []
         memory = torch.tensor(self.memory_bank, dtype=torch.float32).to(self.device)

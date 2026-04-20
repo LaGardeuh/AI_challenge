@@ -1,9 +1,3 @@
-"""
-Script à lancer une seule fois pour entraîner et sauvegarder
-les memory banks de toutes les catégories MVTec.
-Les fichiers sont sauvegardés dans models/ au format .npy
-"""
-
 import argparse
 import numpy as np
 from pathlib import Path

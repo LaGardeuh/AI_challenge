@@ -1,7 +1,4 @@
 """
-Application de détection d'anomalies industrielles.
-Utilise les memory banks pré-entraînées avec PatchCore.
-
 Lancement :
     python app.py --models_dir ./models --threshold 0.5
 """
@@ -21,8 +18,6 @@ from model import FeatureExtractor, upsample_and_concat
 from dataset import MVTEC_CATEGORIES, IMAGENET_MEAN, IMAGENET_STD
 from torchvision import transforms
 
-# --- transformations image ---
-
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -34,10 +29,7 @@ denorm = transforms.Normalize(
     std=[1 / s for s in IMAGENET_STD],
 )
 
-# --- chargement des modèles ---
-
 def load_memory_banks(models_dir: str) -> dict:
-    """Charge toutes les memory banks disponibles depuis le dossier models/."""
     banks = {}
     for cat in MVTEC_CATEGORIES:
         path = Path(models_dir) / f"{cat}_memory_bank.npy"
@@ -45,17 +37,13 @@ def load_memory_banks(models_dir: str) -> dict:
             banks[cat] = np.load(str(path))
             print(f"  Charge: {cat} ({len(banks[cat]):,} patches)")
         else:
-            print(f"  Manquant: {cat} (lancer save_models.py d'abord)")
+            print(f"  Manquant: {cat}")
     return banks
 
 
 def compute_anomaly_score(image_pil: Image.Image, memory_bank: np.ndarray,
                           extractor: FeatureExtractor, device: str,
                           knn: int = 3, smooth_sigma: float = 1.0) -> tuple:
-    """
-    Calcule le score d'anomalie et la carte de chaleur pour une image.
-    Retourne (score, heatmap_array, image_originale_array).
-    """
     img_tensor = transform(image_pil.convert("RGB")).unsqueeze(0).to(device)
 
     memory = torch.tensor(memory_bank, dtype=torch.float32).to(device)
@@ -74,17 +62,14 @@ def compute_anomaly_score(image_pil: Image.Image, memory_bank: np.ndarray,
         score_map = patch_scores.reshape(H, W).cpu().numpy()
         score_map = gaussian_filter(score_map, sigma=smooth_sigma)
 
-        # redimensionnement à 224x224
         score_map_pil = Image.fromarray(score_map.astype(np.float32))
         score_map_full = np.array(score_map_pil.resize((224, 224), Image.BILINEAR))
 
     score = float(np.percentile(score_map_full, 99))
 
-    # normalisation pour l'affichage
     mn, mx = score_map_full.min(), score_map_full.max()
     score_map_norm = (score_map_full - mn) / (mx - mn + 1e-8)
 
-    # image originale dénormalisée
     img_np = denorm(img_tensor.squeeze(0).cpu()).permute(1, 2, 0).numpy()
     img_np = np.clip(img_np, 0, 1)
 
@@ -93,7 +78,6 @@ def compute_anomaly_score(image_pil: Image.Image, memory_bank: np.ndarray,
 
 def build_result_image(img_np: np.ndarray, score_map: np.ndarray,
                        verdict: str, score: float) -> np.ndarray:
-    """Génère l'image de résultat avec heatmap superposée et verdict."""
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     color = "#e74c3c" if verdict == "DEFAUT" else "#2ecc71"
     fig.suptitle(f"{verdict}  |  Score: {score:.4f}", fontsize=14,
@@ -121,8 +105,7 @@ def build_result_image(img_np: np.ndarray, score_map: np.ndarray,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models_dir", type=str, default="./models")
-    parser.add_argument("--threshold", type=float, default=None,
-                        help="Seuil fixe (optionnel, sinon calculé par percentile)")
+    parser.add_argument("--threshold", type=float, default=None)
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -132,14 +115,12 @@ def main():
     memory_banks = load_memory_banks(args.models_dir)
 
     if not memory_banks:
-        print("Aucun modele trouve. Lancer d'abord: python save_models.py --data_root <chemin>")
+        print("Aucun modele trouve.")
         return
 
     print("\nChargement du feature extractor...")
     extractor = FeatureExtractor().to(device).eval()
 
-    # seuils par catégorie calculés depuis les scores d'entraînement
-    # si pas de seuil fixe, on utilise un seuil adaptatif basé sur les percentiles
     thresholds = {}
 
     available_categories = list(memory_banks.keys())
@@ -157,7 +138,6 @@ def main():
                 image_pil, memory_banks[category], extractor, device
             )
 
-            # seuil adaptatif : on utilise celui fourni ou un seuil par défaut
             threshold = args.threshold if args.threshold else thresholds.get(category, 0.5)
 
             verdict = "DEFAUT" if score > threshold else "NORMAL"
@@ -174,7 +154,6 @@ def main():
             import traceback
             return None, f"ERREUR:\n{traceback.format_exc()}"
 
-    # --- interface Gradio ---
     with gr.Blocks(title="Détection d'anomalies industrielles") as demo:
         gr.Markdown("## Détection d'anomalies industrielles - PatchCore")
         gr.Markdown("Sélectionnez le type de composant, puis glissez-déposez une image.")
@@ -202,7 +181,6 @@ def main():
             outputs=[result_image, result_text],
         )
 
-        # analyse automatique quand on change l'image
         image_input.change(
             fn=predict,
             inputs=[image_input, category_input],

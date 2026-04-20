@@ -1,10 +1,7 @@
 """
-AI Challenge — Industrial Defect Detection POC
-PatchCore on MVTec AD (all 15 categories)
-
 Usage:
     python main.py --data_root ../mvtec_data --output_dir ./results
-    python main.py --data_root ../mvtec_data --category bottle  # single category
+    python main.py --data_root ../mvtec_data --category bottle
 """
 
 import argparse
@@ -39,7 +36,6 @@ def run_category(category: str, data_root: str, output_dir: str,
                       knn=3, smooth_sigma=1.0)
     model.fit(train_ds)
 
-    # Predict on train/good + test/* combined
     tr_scores, tr_maps, tr_labels, tr_masks = model.predict(train_ds)
     te_scores, te_maps, te_labels, te_masks = model.predict(test_ds)
 
@@ -62,7 +58,6 @@ def run_category(category: str, data_root: str, output_dir: str,
     print_results(category, img_metrics, pix_auroc)
 
     if save_viz:
-        # Collect raw images for visualisation
         images_list = [test_ds[i][0] for i in range(len(test_ds))]
         import torch as _torch
         images_tensor = _torch.stack(images_list)
@@ -136,7 +131,6 @@ def main():
         )
         all_results[cat] = result
 
-    # ---- Summary ----
     valid = [r for r in all_results.values() if not np.isnan(r["image_auroc"])]
     mean_img_auroc = np.mean([r["image_auroc"] for r in valid])
     mean_pix_auroc = np.mean([r["pixel_auroc"] for r in valid
@@ -150,7 +144,6 @@ def main():
     print(f"  Mean Pixel AUROC : {mean_pix_auroc:.4f}")
     print(f"  Mean F1          : {mean_f1:.4f}")
 
-    # Save JSON results
     results_path = Path(args.output_dir) / "results.json"
     summary = {
         "mean_image_auroc": round(mean_img_auroc, 4),
