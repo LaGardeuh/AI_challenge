@@ -1,19 +1,8 @@
-"""
-Métriques d'évaluation construites from scratch (sans utiliser le code d'évaluation fourni par MVTec).
-
-On calcule :
-- AUROC image : capacité globale à distinguer normal/défaut
-- F1, Précision, Rappel : avec recherche du seuil optimal
-- AUROC pixel : qualité de la localisation du défaut
-- Matrice de confusion : TP/TN/FP/FN avec interprétation métier
-"""
-
 import numpy as np
 from sklearn.metrics import roc_auc_score, precision_recall_curve, confusion_matrix
 
 
 def _normalize(scores: np.ndarray) -> np.ndarray:
-    """Normalise les scores entre 0 et 1."""
     mn, mx = scores.min(), scores.max()
     if mx == mn:
         return np.zeros_like(scores)
@@ -22,12 +11,6 @@ def _normalize(scores: np.ndarray) -> np.ndarray:
 
 def image_level_metrics(scores: np.ndarray, labels: np.ndarray,
                         recall_target: float = None) -> dict:
-    """
-    Calcule les métriques au niveau image.
-    Si recall_target est défini, on cherche le seuil qui atteint ce rappel minimum
-    (utile pour minimiser les FN = défauts non détectés).
-    Sinon on maximise le F1.
-    """
     if len(np.unique(labels)) < 2:
         return {"auroc": float("nan"), "f1": float("nan"),
                 "precision": float("nan"), "recall": float("nan"),
@@ -40,7 +23,6 @@ def image_level_metrics(scores: np.ndarray, labels: np.ndarray,
     f1_scores = 2 * precisions * recalls / np.clip(precisions + recalls, 1e-8, None)
 
     if recall_target is not None:
-        # on prend le seuil le plus haut qui garantit encore recall >= recall_target
         valid = np.where(recalls[:-1] >= recall_target)[0]
         best_idx = valid[-1] if len(valid) > 0 else 0
     else:
@@ -66,10 +48,6 @@ def image_level_metrics(scores: np.ndarray, labels: np.ndarray,
 
 def metrics_from_fixed_threshold(scores: np.ndarray, labels: np.ndarray,
                                   threshold: float) -> dict:
-    """
-    Applique un seuil pré-calibré (depuis les données d'entraînement).
-    Permet d'évaluer sans regarder les labels de test.
-    """
     from sklearn.metrics import roc_auc_score, confusion_matrix
     scores_norm = _normalize(scores)
     auroc = roc_auc_score(labels, scores_norm) if len(np.unique(labels)) > 1 else float("nan")
@@ -89,10 +67,6 @@ def metrics_from_fixed_threshold(scores: np.ndarray, labels: np.ndarray,
 
 
 def pixel_level_auroc(anomaly_maps: np.ndarray, gt_masks: np.ndarray) -> float:
-    """
-    Calcule l'AUROC au niveau pixel pour évaluer la qualité de localisation.
-    On compare la carte d'anomalie avec le masque ground truth.
-    """
     flat_scores = anomaly_maps.flatten()
     flat_labels = (gt_masks.flatten() > 0.5).astype(int)
 
@@ -105,7 +79,6 @@ def pixel_level_auroc(anomaly_maps: np.ndarray, gt_masks: np.ndarray) -> float:
 
 def per_defect_metrics(scores: np.ndarray, labels: np.ndarray,
                        defect_types: list, recall_target: float = None) -> dict:
-    """Calcule les métriques par type de défaut pour avoir une analyse détaillée."""
     unique_types = sorted(set(defect_types))
     results = {}
     for dt in unique_types:
@@ -135,5 +108,5 @@ def print_results(category: str, img_metrics: dict, pix_auroc: float):
     fn = img_metrics["fn"]
     print(f"\n  Matrice de confusion :")
     print(f"               Predit:Normal  Predit:Defaut")
-    print(f"  Reel:Normal  TN={tn:<6}    FP={fp}  <- perte argent")
-    print(f"  Reel:Defaut  FN={fn:<6}    TP={tp}  <- perte reputation si FN")
+    print(f"  Reel:Normal  TN={tn:<6}    FP={fp}")
+    print(f"  Reel:Defaut  FN={fn:<6}    TP={tp}")

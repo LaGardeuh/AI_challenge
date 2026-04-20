@@ -4,14 +4,12 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-# les 15 catégories du dataset MVTec AD
 MVTEC_CATEGORIES = [
     "bottle", "cable", "capsule", "carpet", "grid",
     "hazelnut", "leather", "metal_nut", "pill", "screw",
     "tile", "toothbrush", "transistor", "wood", "zipper"
 ]
 
-# valeurs de normalisation standard ImageNet (le backbone a été entraîné avec ces valeurs)
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
@@ -23,21 +21,14 @@ def get_transforms(img_size=224):
     ])
 
 def get_mask_transforms(img_size=224):
-    # NEAREST pour ne pas interpoler les valeurs binaires du masque
+
     return transforms.Compose([
-        transforms.Resize((img_size, img_size), interpolation=Image.NEAREST),
+        transforms.Resize((img_size, img_size), interpolation=Image.NEAREST), 
         transforms.ToTensor(),
     ])
 
 
 class MVTecDataset(Dataset):
-    """
-    Charge les images MVTec AD pour une catégorie donnée.
-    split='train' -> uniquement les images normales (good)
-    split='test'  -> images normales + images défectueuses
-    Retourne (image, masque, label, type_defaut)
-    label=0 = normal, label=1 = défaut
-    """
 
     def __init__(self, root: str, category: str, split: str, img_size: int = 224):
         self.root = Path(root) / category
@@ -56,7 +47,6 @@ class MVTecDataset(Dataset):
             label = 0 if defect_type == "good" else 1
             for img_path in sorted(defect_dir.glob("*.png")):
                 if label == 1:
-                    # le masque ground truth se trouve dans ground_truth/ avec le suffixe _mask
                     mask_path = (
                         self.root / "ground_truth" / defect_type /
                         (img_path.stem + "_mask.png")
@@ -77,7 +67,6 @@ class MVTecDataset(Dataset):
             mask = Image.open(mask_path).convert("L")
             mask = self.mask_transform(mask)
         else:
-            # pas de masque pour les images normales, on retourne un masque vide
             import torch
             mask = torch.zeros(1, image.shape[1], image.shape[2])
 
