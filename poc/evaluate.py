@@ -6,10 +6,11 @@ Metrics:
   - Image-level F1     : with optimal threshold search
   - Pixel-level AUROC  : localisation quality
   - Precision / Recall : at optimal threshold
+  - Confusion matrix   : TP / TN / FP / FN with business cost breakdown
 """
 
 import numpy as np
-from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
+from sklearn.metrics import roc_auc_score, precision_recall_curve, confusion_matrix
 
 
 def _normalize(scores: np.ndarray) -> np.ndarray:
@@ -41,12 +42,16 @@ def image_level_metrics(scores: np.ndarray, labels: np.ndarray) -> dict:
     best_precision = precisions[best_idx]
     best_recall = recalls[best_idx]
 
+    scores_bin = (scores_norm >= best_threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(labels, scores_bin, labels=[0, 1]).ravel()
+
     return {
         "auroc": float(auroc),
         "f1": float(best_f1),
         "precision": float(best_precision),
         "recall": float(best_recall),
         "threshold": float(best_threshold),
+        "tp": int(tp), "tn": int(tn), "fp": int(fp), "fn": int(fn),
     }
 
 
@@ -94,3 +99,9 @@ def print_results(category: str, img_metrics: dict, pix_auroc: float):
     print(f"  Recall        : {img_metrics['recall']:.4f}")
     print(f"  Pixel AUROC   : {pix_auroc:.4f}")
     print(f"  Threshold     : {img_metrics['threshold']:.4f}")
+    tp, tn = img_metrics["tp"], img_metrics["tn"]
+    fp, fn = img_metrics["fp"], img_metrics["fn"]
+    print(f"\n  Confusion Matrix:")
+    print(f"               Pred:Normal  Pred:Defect")
+    print(f"  Real:Normal  TN={tn:<5}    FP={fp}  <- money loss")
+    print(f"  Real:Defect  FN={fn:<5}    TP={tp}  <- reputation loss if FN")

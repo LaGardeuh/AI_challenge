@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 from dataset import MVTecDataset, MVTEC_CATEGORIES
 from model import PatchCore
 from evaluate import image_level_metrics, pixel_level_auroc, per_defect_metrics, print_results
-from visualize import save_heatmaps, save_summary_chart
+from visualize import save_heatmaps, save_summary_chart, save_confusion_matrix, save_global_confusion_matrix
 
 
 def run_category(category: str, data_root: str, output_dir: str,
@@ -58,6 +58,9 @@ def run_category(category: str, data_root: str, output_dir: str,
             category=category,
         )
 
+    if save_viz:
+        save_confusion_matrix(img_metrics, category, output_dir)
+
     elapsed = time.time() - t0
     result = {
         "category": category,
@@ -69,6 +72,8 @@ def run_category(category: str, data_root: str, output_dir: str,
         "recall": img_metrics["recall"],
         "pixel_auroc": pix_auroc,
         "threshold": img_metrics["threshold"],
+        "tp": img_metrics["tp"], "tn": img_metrics["tn"],
+        "fp": img_metrics["fp"], "fn": img_metrics["fn"],
         "defect_breakdown": defect_breakdown,
         "elapsed_s": round(elapsed, 1),
     }
@@ -139,6 +144,7 @@ def main():
 
     if not args.no_viz:
         save_summary_chart(all_results, output_dir=args.output_dir)
+        save_global_confusion_matrix(all_results, output_dir=args.output_dir)
 
 
 if __name__ == "__main__":

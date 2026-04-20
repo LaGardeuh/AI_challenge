@@ -71,6 +71,71 @@ def save_heatmaps(images, anomaly_maps, gt_masks, labels, defect_types,
         plt.close()
 
 
+def save_confusion_matrix(img_metrics: dict, category: str, output_dir: str):
+    """Saves a visual confusion matrix with business cost annotations."""
+    tp = img_metrics["tp"]
+    tn = img_metrics["tn"]
+    fp = img_metrics["fp"]
+    fn = img_metrics["fn"]
+
+    matrix = np.array([[tn, fp], [fn, tp]])
+    labels = np.array([["TN", "FP\n(money loss)"], ["FN\n(reputation loss)", "TP"]])
+
+    fig, ax = plt.subplots(figsize=(5, 4))
+    colors = np.array([[0.2, 0.8], [0.8, 0.2]])  # green=good, red=bad
+    cmap = plt.cm.RdYlGn
+    im = ax.imshow(colors, cmap=cmap, vmin=0, vmax=1)
+
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(["Predicted: Normal", "Predicted: Defect"])
+    ax.set_yticklabels(["Actual: Normal", "Actual: Defect"])
+    ax.set_title(f"Confusion Matrix — {category}")
+
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, f"{labels[i, j]}\n{matrix[i, j]}",
+                    ha="center", va="center", fontsize=11, fontweight="bold")
+
+    plt.tight_layout()
+    out = Path(output_dir) / "confusion_matrices"
+    out.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out / f"{category}_confusion.png", dpi=120, bbox_inches="tight")
+    plt.close()
+
+
+def save_global_confusion_matrix(results: dict, output_dir: str):
+    """Aggregates confusion matrices across all categories."""
+    tp = sum(r["image_f1"] and r["tp"] for r in results.values() if "tp" in r)
+    tn = sum(r["tn"] for r in results.values() if "tn" in r)
+    fp = sum(r["fp"] for r in results.values() if "fp" in r)
+    fn = sum(r["fn"] for r in results.values() if "fn" in r)
+    tp = sum(r["tp"] for r in results.values() if "tp" in r)
+
+    matrix = np.array([[tn, fp], [fn, tp]])
+    labels = np.array([["TN", "FP\n(money loss)"], ["FN\n(reputation loss)", "TP"]])
+    colors = np.array([[0.2, 0.8], [0.8, 0.2]])
+
+    fig, ax = plt.subplots(figsize=(5, 4))
+    ax.imshow(colors, cmap=plt.cm.RdYlGn, vmin=0, vmax=1)
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(["Predicted: Normal", "Predicted: Defect"])
+    ax.set_yticklabels(["Actual: Normal", "Actual: Defect"])
+    ax.set_title("Global Confusion Matrix — All Categories")
+
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, f"{labels[i, j]}\n{matrix[i, j]}",
+                    ha="center", va="center", fontsize=11, fontweight="bold")
+
+    plt.tight_layout()
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    plt.savefig(Path(output_dir) / "global_confusion.png", dpi=120, bbox_inches="tight")
+    plt.close()
+    print(f"Global confusion matrix saved -> {output_dir}/global_confusion.png")
+
+
 def save_summary_chart(results: dict, output_dir: str):
     """Bar chart of image-level AUROC per category."""
     categories = list(results.keys())
